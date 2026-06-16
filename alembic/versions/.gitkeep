@@ -1,0 +1,2 @@
+# Alembic migration files are generated here.
+# Run: PYTHONPATH=. alembic revision --autogenerate -m "initial_schema"
