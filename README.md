@@ -43,6 +43,9 @@ DIMP monitors the internet for domains that may impersonate your organisation an
 ### Findings
 ![Findings](docs/screenshots/dimp-findings.png)
 
+### Finding Detail
+![Finding Detail](docs/screenshots/dimp-finding-detail.png)
+
 ### Monitored Assets
 ![Assets](docs/screenshots/dimp-assets.png)
 
