@@ -108,7 +108,7 @@ export default function Findings() {
                 {findings.map(f => (
                   <tr key={f.id} onClick={() => navigate(`/findings/${f.id}`)}>
                     <td>
-                      <span className="mono">{truncate(f.domain_id, 45)}</span>
+                      <span className="mono">{f.domain_name || truncate(f.domain_id, 45)}</span>
                       {f.summary && (
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                           {truncate(f.summary, 60)}

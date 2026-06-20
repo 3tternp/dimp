@@ -284,6 +284,7 @@ class FindingResponse(OrmBase):
     id: UUID
     asset_id: UUID
     domain_id: UUID
+    domain_name: str | None = None
     scan_job_id: UUID | None = None
     detection_type: DetectionType
     discovery_source: str

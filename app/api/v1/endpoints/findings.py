@@ -30,7 +30,9 @@ async def list_findings(
     List findings with optional filters.
     Supports filtering by asset, severity, status, and detection type.
     """
-    q = select(Finding).order_by(Finding.first_seen_at.desc())
+    q = select(Finding).options(
+        selectinload(Finding.domain_entry)
+    ).order_by(Finding.first_seen_at.desc())
 
     if asset_id:
         q = q.where(Finding.asset_id == str(asset_id))
@@ -43,7 +45,15 @@ async def list_findings(
 
     q = q.offset(page["skip"]).limit(page["limit"])
     result = await db.execute(q)
-    return result.scalars().all()
+    findings = result.scalars().all()
+
+    response = []
+    for f in findings:
+        data = FindingResponse.model_validate(f)
+        if f.domain_entry:
+            data.domain_name = f.domain_entry.domain
+        response.append(data)
+    return response
 
 
 @router.get("/{finding_id}", response_model=FindingDetail)

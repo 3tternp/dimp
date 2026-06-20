@@ -19,8 +19,8 @@ def collect_dns(domain: str) -> dict:
     Returns a dict: {record_type: [(value, ttl, priority), ...]}
     """
     resolver = dns.resolver.Resolver()
-    resolver.timeout = 5
-    resolver.lifetime = 8
+    resolver.timeout = 2
+    resolver.lifetime = 3
     results: dict[str, list[dict]] = {}
     resolves = False
 

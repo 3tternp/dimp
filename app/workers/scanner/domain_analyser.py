@@ -19,13 +19,16 @@ from app.models import (
     Finding,
     FindingStatus,
     MonitoredAsset,
+    SimilarityResult,
     SSLCertificate,
     WebpageSnapshot,
 )
 from app.workers.scanner.dns_collector import collect_dns
 from app.workers.scanner.http_collector import collect_http_metadata
 from app.workers.scanner.risk_scorer import build_summary, compute_risk_score
+from app.workers.scanner.similarity_engine import compute_similarity
 from app.workers.scanner.ssl_collector import collect_ssl
+from app.workers.scanner.ti_feeds import run_ti_checks
 from app.workers.scanner.whois_collector import collect_whois
 
 logger = logging.getLogger(__name__)
@@ -119,6 +122,25 @@ def _persist_snapshot(db: Session, domain_entry: DiscoveredDomain, http_data: di
     return snap
 
 
+def _persist_similarity(db: Session, domain_entry: DiscoveredDomain, sim_data: dict, snapshot: WebpageSnapshot | None) -> None:
+    """Persist similarity computation results."""
+    record = SimilarityResult(
+        domain_id=str(domain_entry.id),
+        snapshot_id=str(snapshot.id) if snapshot else None,
+        phash_score=sim_data.get("phash_score"),
+        ahash_score=sim_data.get("ahash_score"),
+        dhash_score=sim_data.get("dhash_score"),
+        visual_similarity_score=sim_data.get("visual_similarity_score"),
+        tfidf_score=sim_data.get("tfidf_score"),
+        dom_similarity_score=sim_data.get("dom_similarity_score"),
+        favicon_hash_match=sim_data.get("favicon_hash_match"),
+        overall_similarity_score=sim_data.get("overall_similarity_score"),
+        reference_screenshot_path=domain_entry.asset.homepage_screenshot_path,
+    )
+    db.add(record)
+    db.flush()
+
+
 def analyse_domain(
     db: Session,
     domain: str,
@@ -130,59 +152,84 @@ def analyse_domain(
     Full analysis pipeline for a single domain.
     Returns a Finding if the risk score exceeds the asset's threshold, else None.
     """
-    logger.info("analysing domain", domain=domain, asset=asset.domain)
+    logger.info("analysing domain=%s asset=%s", domain, asset.domain)
 
-    # Get/create domain record
     domain_entry = _get_or_create_domain(db, domain, asset, source)
-
-    # Collect brand keywords for this asset
     brand_keywords = [kw.keyword for kw in asset.brand_keywords if kw.is_active]
 
     # ── Phase 1: DNS ──────────────────────────────────────────────────────────
     dns_data = collect_dns(domain)
     _persist_dns(db, domain_entry, dns_data)
-
     domain_entry.resolves_dns = dns_data.get("resolves", False)
 
-    # Short-circuit: if domain doesn't resolve, assign minimal score
+    # Non-resolving domains: skip expensive lookups
     if not domain_entry.resolves_dns:
         score, severity = compute_risk_score(domain_entry)
-        domain_entry.risk_score = max(5, score - 20)  # penalise non-resolving
+        domain_entry.risk_score = max(5, score - 20)
         domain_entry.severity = severity
         domain_entry.last_checked_at = datetime.now(timezone.utc)
         db.commit()
-        return None  # no finding for non-resolving domains unless it was in a feed
+        return None
 
-    # ── Phase 2: WHOIS ────────────────────────────────────────────────────────
-    try:
-        whois_data = collect_whois(domain)
-        _persist_whois(db, domain_entry, whois_data)
-    except Exception as e:
-        logger.warning("whois_failed", domain=domain, error=str(e))
+    # ── Phase 3: WHOIS ────────────────────────────────────────────────────────
+    if domain_entry.resolves_dns:
+        try:
+            whois_data = collect_whois(domain)
+            _persist_whois(db, domain_entry, whois_data)
+        except Exception as e:
+            logger.warning("whois_failed domain=%s error=%s", domain, str(e))
 
-    # ── Phase 3: SSL ──────────────────────────────────────────────────────────
-    try:
-        ssl_data = collect_ssl(domain)
-        _persist_ssl(db, domain_entry, ssl_data)
-    except Exception as e:
-        logger.warning("ssl_failed", domain=domain, error=str(e))
+    # ── Phase 4: SSL ──────────────────────────────────────────────────────────
+    if domain_entry.resolves_dns:
+        try:
+            ssl_data = collect_ssl(domain)
+            _persist_ssl(db, domain_entry, ssl_data)
+        except Exception as e:
+            logger.warning("ssl_failed domain=%s error=%s", domain, str(e))
 
-    # ── Phase 4: HTTP metadata ────────────────────────────────────────────────
+    # ── Phase 5: HTTP metadata ────────────────────────────────────────────────
+    snapshot = None
+    http_data = {}
+    if domain_entry.resolves_dns:
+        try:
+            http_data = collect_http_metadata(domain, brand_keywords)
+            domain_entry.is_active_website = http_data.get("is_active_website", False)
+            domain_entry.http_status_code = http_data.get("http_status_code")
+            domain_entry.redirect_chain = http_data.get("redirect_chain")
+            domain_entry.page_title = http_data.get("page_title")
+            domain_entry.meta_description = http_data.get("meta_description")
+            domain_entry.favicon_url = http_data.get("favicon_url")
+            snapshot = _persist_snapshot(db, domain_entry, http_data)
+        except Exception as e:
+            logger.warning("http_collection_failed domain=%s error=%s", domain, str(e))
+
+    # ── Phase 6: Threat intelligence ────────────────────────────────────────────
     try:
-        http_data = collect_http_metadata(domain, brand_keywords)
-        domain_entry.is_active_website = http_data.get("is_active_website", False)
-        domain_entry.http_status_code = http_data.get("http_status_code")
-        domain_entry.redirect_chain = http_data.get("redirect_chain")
-        domain_entry.page_title = http_data.get("page_title")
-        domain_entry.meta_description = http_data.get("meta_description")
-        domain_entry.favicon_url = http_data.get("favicon_url")
-        _persist_snapshot(db, domain_entry, http_data)
+        ti_hits = run_ti_checks(db, domain_entry)
+        if ti_hits:
+            logger.info("ti_matches domain=%s hits=%d", domain, ti_hits)
     except Exception as e:
-        logger.warning("http_collection_failed", domain=domain, error=str(e))
+        logger.warning("ti_check_failed domain=%s error=%s", domain, str(e))
+
+    # ── Phase 7: Similarity computation ───────────────────────────────────────
+    if domain_entry.resolves_dns and http_data:
+        try:
+            sim_data = compute_similarity(
+                reference_screenshot=asset.homepage_screenshot_path,
+                suspicious_screenshot=None,
+                reference_html=None,
+                suspicious_html=None,
+                reference_favicon_hash=None,
+                suspicious_favicon_hash=http_data.get("favicon_hash"),
+            )
+            if sim_data.get("overall_similarity_score") is not None:
+                _persist_similarity(db, domain_entry, sim_data, snapshot)
+        except Exception as e:
+            logger.warning("similarity_failed domain=%s error=%s", domain, str(e))
 
     db.flush()
 
-    # ── Phase 5: Risk scoring ─────────────────────────────────────────────────
+    # ── Phase 8: Risk scoring ─────────────────────────────────────────────────
     db.refresh(domain_entry)
     score, severity = compute_risk_score(domain_entry)
     domain_entry.risk_score = score
@@ -191,7 +238,7 @@ def analyse_domain(
 
     db.flush()
 
-    # ── Phase 6: Create/update Finding if above threshold ─────────────────────
+    # ── Phase 9: Create/update Finding if above threshold ─────────────────────
     finding = None
     if score >= asset.risk_threshold:
         existing_finding = (
@@ -207,7 +254,6 @@ def analyse_domain(
         summary = build_summary(domain_entry, score)
 
         if existing_finding:
-            # Update score/severity on re-scan
             existing_finding.risk_score = score
             existing_finding.severity = severity
             existing_finding.summary = summary

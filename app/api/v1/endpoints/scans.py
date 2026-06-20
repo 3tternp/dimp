@@ -38,16 +38,71 @@ async def trigger_scan(body: ScanJobTrigger, db: DB, current_user: AnalystOrAdmi
     db.add(job)
     await db.flush()  # get the job.id before dispatching
 
-    # Dispatch Celery task (imported here to avoid circular imports)
-    try:
-        from app.workers.tasks import run_full_scan
-        task = run_full_scan.delay(str(job.id), str(body.asset_id))
-        job.celery_task_id = task.id
-        db.add(job)
-    except Exception as e:
-        # Celery may not be available in dev — job stays queued
-        job.error_message = f"Failed to dispatch task: {e}"
-        db.add(job)
+    # Run scan in a background thread (no Celery worker required)
+    import logging
+    import threading
+    import traceback
+    from datetime import datetime, timezone
+
+    _job_id, _asset_id = str(job.id), str(body.asset_id)
+    _logger = logging.getLogger("scan_runner")
+
+    def _run_scan():
+        from app.workers.scanner.domain_analyser import analyse_domain
+        from app.workers.scanner.discovery import generate_variants, query_ct_logs
+        from app.workers.tasks import _get_sync_db, _update_job
+        from app.models import MonitoredAsset, ScanJobStatus
+
+        scan_db = _get_sync_db()
+        try:
+            _update_job(_job_id, status=ScanJobStatus.running, started_at=datetime.now(timezone.utc))
+            asset = scan_db.query(MonitoredAsset).get(_asset_id)
+            if not asset:
+                raise ValueError(f"Asset {_asset_id} not found")
+
+            _logger.info("scan_started job=%s domain=%s", _job_id, asset.domain)
+
+            variants = generate_variants(asset.domain)
+            ct_domains = query_ct_logs(asset.domain)
+            all_candidates = list(set(variants + ct_domains))
+            _logger.info("discovered %d candidate domains", len(all_candidates))
+            _update_job(_job_id, domains_discovered=len(all_candidates))
+
+            findings_created = 0
+            for i, domain_candidate in enumerate(all_candidates):
+                try:
+                    finding = analyse_domain(db=scan_db, domain=domain_candidate, asset=asset, job_id=_job_id)
+                    if finding:
+                        findings_created += 1
+                    if (i + 1) % 50 == 0:
+                        _logger.info("progress: %d/%d domains analysed, %d findings", i + 1, len(all_candidates), findings_created)
+                except Exception as e:
+                    _logger.debug("domain_analysis_failed domain=%s: %s", domain_candidate, e)
+                    continue
+
+            asset.last_scanned_at = datetime.now(timezone.utc)
+            scan_db.commit()
+            _update_job(
+                _job_id,
+                status=ScanJobStatus.completed,
+                completed_at=datetime.now(timezone.utc),
+                domains_analysed=len(all_candidates),
+                findings_created=findings_created,
+            )
+            _logger.info("scan_completed job=%s findings=%d", _job_id, findings_created)
+        except Exception as exc:
+            _logger.error("scan_failed job=%s: %s", _job_id, exc)
+            _update_job(
+                _job_id,
+                status=ScanJobStatus.failed,
+                completed_at=datetime.now(timezone.utc),
+                error_message=str(exc),
+                error_traceback=traceback.format_exc(),
+            )
+        finally:
+            scan_db.close()
+
+    threading.Thread(target=_run_scan, daemon=True).start()
 
     return job
 

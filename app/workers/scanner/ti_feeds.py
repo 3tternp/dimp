@@ -26,7 +26,7 @@ def run_ti_checks(db: Session, domain_entry: DiscoveredDomain) -> int:
     Run all enabled threat intel feeds against `domain_entry.domain`.
     Persists new ThreatIntelMatch records and returns the count of hits.
     """
-    from app.workers.scanner.feeds import openphish, urlhaus, urlscan, virustotal
+    from app.workers.scanner.feeds import openphish, phishtank, threatfox, urlhaus, urlscan, virustotal
 
     domain = domain_entry.domain
     all_matches: list[dict] = []
@@ -34,6 +34,8 @@ def run_ti_checks(db: Session, domain_entry: DiscoveredDomain) -> int:
     # Run feeds — each returns [] if no hit or unavailable
     feed_runners = [
         ("openphish", openphish.check),
+        ("phishtank", phishtank.check),
+        ("threatfox", threatfox.check),
         ("urlhaus", urlhaus.check),
         ("urlscan", urlscan.check),
         ("virustotal", virustotal.check),
