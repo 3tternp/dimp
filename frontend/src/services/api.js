@@ -108,3 +108,28 @@ export const createReport = (data) =>
 
 export const downloadReport = (id) =>
   `${BASE}/api/v1/reports/${id}/download`;
+
+// ── Settings ────────────────────────────────────────────────────────────────
+export const getProfile = () =>
+  api.get('/settings/profile').then(r => r.data);
+
+export const updateProfile = (data) =>
+  api.patch('/settings/profile', data).then(r => r.data);
+
+export const changePassword = (currentPassword, newPassword) =>
+  api.post('/settings/change-password', { current_password: currentPassword, new_password: newPassword });
+
+export const getUsers = () =>
+  api.get('/settings/users').then(r => r.data);
+
+export const createUser = (data) =>
+  api.post('/settings/users', data).then(r => r.data);
+
+export const updateUser = (id, data) =>
+  api.patch(`/settings/users/${id}`, data).then(r => r.data);
+
+export const deleteUser = (id) =>
+  api.delete(`/settings/users/${id}`);
+
+export const getPlatformInfo = () =>
+  api.get('/settings/platform').then(r => r.data);

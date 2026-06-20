@@ -7,6 +7,7 @@ import FindingDetail from './pages/FindingDetail';
 import Assets from './pages/Assets';
 import Scans from './pages/Scans';
 import Reports from './pages/Reports';
+import Settings from './pages/Settings';
 import Login from './pages/Login';
 import './index.css';
 
@@ -44,6 +45,7 @@ function AppRoutes() {
       <Route path="/assets" element={<PrivateRoute><Assets /></PrivateRoute>} />
       <Route path="/scans" element={<PrivateRoute><Scans /></PrivateRoute>} />
       <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
+      <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
