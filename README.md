@@ -509,6 +509,5 @@ MIT — see [LICENSE](LICENSE).
 ---
 
 <div align="center">
-  Built with FastAPI, React, PostgreSQL, Celery, and Playwright.<br/>
   Developed for SOC and threat intelligence operations.
 </div>
