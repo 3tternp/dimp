@@ -49,6 +49,9 @@ DIMP monitors the internet for domains that may impersonate your organisation an
 ### Finding Detail — example.co.uk (TLD Variation, Low)
 ![Finding Detail - example.co.uk](docs/screenshots/dimp-finding-couk.png)
 
+### Finding Detail — WHOIS, SSL & DNS
+![Finding WHOIS](docs/screenshots/dimp-finding-whois.png)
+
 ### Monitored Assets
 ![Assets](docs/screenshots/dimp-assets.png)
 
