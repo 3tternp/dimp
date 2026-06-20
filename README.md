@@ -24,11 +24,33 @@ DIMP monitors the internet for domains that may impersonate your organisation an
 | Domain discovery | 5,000+ typosquat variants per domain · CT log queries · homoglyphs · TLD sweeps · extra-word patterns |
 | Domain analysis | DNS · WHOIS/RDAP · SSL certificates · HTTP metadata · redirect chains · ASN/geo lookup |
 | Webpage detection | Playwright screenshots · pHash visual similarity · TF-IDF content similarity · DOM structure · login form detection · favicon comparison |
-| Threat intelligence | OpenPhish · URLhaus · urlscan.io · VirusTotal (API key optional) |
+| Threat intelligence | OpenPhish · PhishTank · ThreatFox · URLhaus · urlscan.io · VirusTotal |
 | Risk scoring | 16-factor 0–100 score → Low / Medium / High / Critical severity |
 | Alerting | Email (SMTP) · Slack webhook · MS Teams webhook · SIEM JSON webhook · UDP syslog |
 | Reporting | HTML · PDF (WeasyPrint) · CSV · JSON with executive summary |
 | API | Full REST API with JWT auth, RBAC, OpenAPI docs |
+
+---
+
+## Screenshots
+
+### Login
+![Login](docs/screenshots/dimp-login.png)
+
+### Dashboard
+![Dashboard](docs/screenshots/dimp-dashboard.png)
+
+### Findings
+![Findings](docs/screenshots/dimp-findings.png)
+
+### Monitored Assets
+![Assets](docs/screenshots/dimp-assets.png)
+
+### Scan History
+![Scans](docs/screenshots/dimp-scans.png)
+
+### Reports
+![Reports](docs/screenshots/dimp-reports.png)
 
 ---
 
@@ -122,7 +144,8 @@ curl -s -X POST http://localhost:8000/api/v1/auth/register \
                         │ queries
         ┌───────────────▼──────────────────────────────────┐
         │  External OSINT                                   │
-        │  crt.sh · OpenPhish · URLhaus · urlscan.io · VT   │
+        │  crt.sh · OpenPhish · PhishTank · ThreatFox       │
+        │  URLhaus · urlscan.io · VirusTotal                │
         └──────────────────────────────────────────────────┘
 ```
 
@@ -188,6 +211,8 @@ dimp/
 │   │       ├── ti_feeds.py         # TI feed orchestrator
 │   │       └── feeds/
 │   │           ├── openphish.py    # OpenPhish free feed
+│   │           ├── phishtank.py    # PhishTank verified phishing DB
+│   │           ├── threatfox.py    # Abuse.ch ThreatFox IOC DB
 │   │           ├── urlhaus.py      # URLhaus API
 │   │           ├── urlscan.py      # urlscan.io search API
 │   │           └── virustotal.py   # VirusTotal URL report
