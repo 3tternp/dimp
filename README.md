@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>DIMP - Domain Impersonation Monitoring Platform</h1>
+  <h1>🛡️ DIMP — Domain Impersonation Monitoring Platform</h1>
   <p><strong>Continuous detection of typosquatting, homoglyph domains, cloned webpages, and phishing infrastructure targeting your brand.</strong></p>
   <br/>
   <img src="https://img.shields.io/badge/Python-3.12+-blue?logo=python" />
@@ -13,7 +13,7 @@
 
 ---
 
-## Overview
+## 📋 Overview
 
 DIMP monitors the internet for domains that may impersonate your organisation and automatically analyses them for phishing risk. It generates typosquatting variants, queries certificate transparency logs, probes live sites for login forms, compares content visually, and integrates with 6 public threat intelligence feeds — all surfaced in a real-time React dashboard.
 
@@ -21,58 +21,58 @@ DIMP monitors the internet for domains that may impersonate your organisation an
 
 | Capability | Details |
 |---|---|
-| Domain discovery | 5,000+ typosquat variants per domain, CT log queries (crt.sh), homoglyphs, TLD sweeps, extra-word patterns |
-| Domain analysis | DNS (A/AAAA/MX/NS/TXT/CNAME), WHOIS/RDAP, SSL certificates, HTTP metadata, redirect chains, login form detection |
-| Similarity detection | pHash visual similarity, TF-IDF content similarity, DOM structure comparison, favicon hash matching |
-| Threat intelligence | OpenPhish, PhishTank, ThreatFox (Abuse.ch), URLhaus (Abuse.ch), urlscan.io, VirusTotal |
-| Risk scoring | 16-factor weighted 0-100 score with Low / Medium / High / Critical severity classification |
-| Alerting | Email (SMTP), Slack webhook, MS Teams webhook, SIEM JSON webhook, UDP syslog |
-| Reporting | HTML, PDF (WeasyPrint), CSV, JSON with executive summary |
-| API | Full REST API with JWT auth, role-based access control (admin/analyst/viewer), OpenAPI 3.1 docs |
+| 🔍 Domain discovery | 5,000+ typosquat variants per domain, CT log queries (crt.sh), homoglyphs, TLD sweeps, extra-word patterns |
+| 🌐 Domain analysis | DNS (A/AAAA/MX/NS/TXT/CNAME), WHOIS/RDAP, SSL certificates, HTTP metadata, redirect chains, login form detection |
+| 📊 Similarity detection | pHash visual similarity, TF-IDF content similarity, DOM structure comparison, favicon hash matching |
+| 🕵️ Threat intelligence | OpenPhish, PhishTank, ThreatFox (Abuse.ch), URLhaus (Abuse.ch), urlscan.io, VirusTotal |
+| ⚖️ Risk scoring | 16-factor weighted 0-100 score with Low / Medium / High / Critical severity classification |
+| 🔔 Alerting | Email (SMTP), Slack webhook, MS Teams webhook, SIEM JSON webhook, UDP syslog |
+| 📄 Reporting | HTML, PDF (WeasyPrint), CSV, JSON with executive summary |
+| 🔑 API | Full REST API with JWT auth, role-based access control (admin/analyst/viewer), OpenAPI 3.1 docs |
 
 ---
 
-## Screenshots
+## 📸 Screenshots
 
-### Login
+### 🔐 Login
 ![Login](docs/screenshots/dimp-login.png)
 
-### Dashboard
+### 📊 Dashboard
 ![Dashboard](docs/screenshots/dimp-dashboard.png)
 
-### Findings
+### 🚨 Findings
 ![Findings](docs/screenshots/dimp-findings.png)
 
-### Finding Detail — esample.com (Typosquatting, Medium)
+### 🔎 Finding Detail — esample.com (Typosquatting, Medium)
 ![Finding Detail](docs/screenshots/dimp-finding-detail.png)
 
-### Finding Detail — example.co.uk (TLD Variation, Low)
+### 🔎 Finding Detail — example.co.uk (TLD Variation, Low)
 ![Finding Detail - example.co.uk](docs/screenshots/dimp-finding-couk.png)
 
-### Finding Detail — WHOIS, SSL & DNS
+### 🌐 Finding Detail — WHOIS, SSL & DNS
 ![Finding WHOIS](docs/screenshots/dimp-finding-whois.png)
 
-### Monitored Assets
+### 🛡️ Monitored Assets
 ![Assets](docs/screenshots/dimp-assets.png)
 
-### Scan History
+### 📡 Scan History
 ![Scans](docs/screenshots/dimp-scans.png)
 
-### Reports
+### 📄 Reports
 ![Reports](docs/screenshots/dimp-reports.png)
 
-### Settings
+### ⚙️ Settings
 ![Settings](docs/screenshots/dimp-settings.png)
 
-### Platform Info
+### ℹ️ Platform Info
 ![Platform Info](docs/screenshots/dimp-platform.png)
 
-### API Docs (Swagger)
+### 📘 API Docs (Swagger)
 ![Swagger](docs/screenshots/dimp-swagger.png)
 
 ---
 
-## Quick start
+## 🚀 Quick start
 
 ### Option 1: Docker Compose (recommended)
 
@@ -193,7 +193,7 @@ curl -s -X POST http://localhost:8000/api/v1/auth/register \
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 +---------------------------------------------------------+
@@ -227,7 +227,7 @@ curl -s -X POST http://localhost:8000/api/v1/auth/register \
          +-------------------------------------------------+
 ```
 
-### Scan pipeline
+### 🔄 Scan pipeline
 
 When a scan is triggered (manually or via schedule), the pipeline:
 
@@ -241,7 +241,7 @@ When a scan is triggered (manually or via schedule), the pipeline:
 8. **Risk scoring** — 16-factor weighted scoring engine produces a 0-100 risk score
 9. **Finding creation** — domains exceeding the asset's risk threshold generate findings with severity classification and recommended actions
 
-### Docker Compose services
+### 🐳 Docker Compose services
 
 | Service | Image | Role |
 |---|---|---|
@@ -255,7 +255,7 @@ When a scan is triggered (manually or via schedule), the pipeline:
 
 ---
 
-## Project structure
+## 📁 Project structure
 
 ```
 dimp/
@@ -291,7 +291,8 @@ dimp/
 │   │       ├── findings.py         # Findings list, detail, status workflow
 │   │       ├── scans.py            # Trigger + poll scan jobs
 │   │       ├── dashboard.py        # Stats, charts, trend data
-│   │       └── reports.py          # Report generation + download
+│   │       ├── reports.py          # Report generation + download
+│   │       └── settings.py         # Profile, password, user management
 │   ├── workers/
 │   │   ├── tasks.py                # Celery app + scan orchestration + Beat schedule
 │   │   └── scanner/
@@ -331,7 +332,8 @@ dimp/
 │       │   ├── FindingDetail.js    # Full finding detail + workflow
 │       │   ├── Assets.js           # Asset management + keywords
 │       │   ├── Scans.js            # Scan history + trigger + progress
-│       │   └── Reports.js          # Report generation + download
+│       │   ├── Reports.js          # Report generation + download
+│       │   └── Settings.js         # Profile, password, users, platform info
 │       ├── components/
 │       │   ├── layout/Sidebar.js   # Navigation sidebar
 │       │   └── ui/index.js         # ScoreBar, SeverityBadge, StatusPill...
@@ -349,7 +351,7 @@ dimp/
 
 ---
 
-## Database schema (15 tables)
+## 🗄️ Database schema (15 tables)
 
 | # | Table | Purpose |
 |---|---|---|
@@ -371,7 +373,7 @@ dimp/
 
 ---
 
-## Risk scoring (16 factors)
+## ⚖️ Risk scoring (16 factors)
 
 | Factor | Max pts | Notes |
 |---|---|---|
@@ -396,7 +398,7 @@ dimp/
 
 ---
 
-## Threat intelligence feeds
+## 🕵️ Threat intelligence feeds
 
 | Feed | API Key | Description |
 |---|---|---|
@@ -411,7 +413,7 @@ Feeds that don't require API keys work out of the box. For enhanced coverage, ad
 
 ---
 
-## API reference
+## 📡 API reference
 
 All endpoints require `Authorization: Bearer <token>` except login/register.
 
@@ -435,6 +437,11 @@ All endpoints require `Authorization: Bearer <token>` except login/register.
 | `GET` | `/api/v1/dashboard/findings-by-severity` | Severity distribution |
 | `GET` | `/api/v1/dashboard/findings-by-source` | Discovery source distribution |
 | `GET` | `/api/v1/dashboard/findings-by-tld` | TLD distribution |
+| `GET/PATCH` | `/api/v1/settings/profile` | View / update profile |
+| `POST` | `/api/v1/settings/change-password` | Change password |
+| `GET/POST` | `/api/v1/settings/users` | List / create users (admin) |
+| `PATCH/DELETE` | `/api/v1/settings/users/{id}` | Update / delete user (admin) |
+| `GET` | `/api/v1/settings/platform` | Platform info and capabilities |
 | `POST` | `/api/v1/reports` | Generate report (HTML/PDF/CSV/JSON) |
 | `GET` | `/api/v1/reports/{id}/download` | Download report file |
 
@@ -442,7 +449,7 @@ Interactive docs: **http://localhost:8000/docs**
 
 ---
 
-## Environment variables
+## 🔧 Environment variables
 
 See `.env.example` for the full annotated list.
 
@@ -463,7 +470,7 @@ See `.env.example` for the full annotated list.
 
 ---
 
-## Deployment notes
+## 🚢 Deployment notes
 
 - Place a reverse proxy (nginx / Caddy / Traefik) in front of `backend:8000` with TLS
 - Set `DEBUG=false` and a strong `SECRET_KEY` in production
@@ -474,7 +481,7 @@ See `.env.example` for the full annotated list.
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
 - [ ] LDAP / SSO authentication
 - [ ] Bulk domain import via CSV
@@ -487,15 +494,15 @@ See `.env.example` for the full annotated list.
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Security
+## 🔒 Security
 
 See [SECURITY.md](SECURITY.md). Please do not open public issues for vulnerabilities.
 
-## License
+## 📜 License
 
 MIT — see [LICENSE](LICENSE).
 

@@ -8,14 +8,25 @@ from datetime import datetime, timezone
 logger = logging.getLogger(__name__)
 
 
-def collect_whois(domain: str) -> dict:
+def collect_whois(domain: str, timeout: int = 10) -> dict:
     """
     Query WHOIS for domain registration data.
     Returns a normalised dict with registration metadata.
     """
+    import signal
+
+    def _timeout_handler(signum, frame):
+        raise TimeoutError(f"WHOIS lookup timed out for {domain}")
+
     try:
         import whois
-        w = whois.whois(domain)
+        old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
+        signal.alarm(timeout)
+        try:
+            w = whois.whois(domain)
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
     except Exception as e:
         logger.debug("WHOIS failed for %s: %s", domain, e)
         return {}

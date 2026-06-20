@@ -63,22 +63,41 @@ async def trigger_scan(body: ScanJobTrigger, db: DB, current_user: AnalystOrAdmi
             _logger.info("scan_started job=%s domain=%s", _job_id, asset.domain)
 
             variants = generate_variants(asset.domain)
-            ct_domains = query_ct_logs(asset.domain)
+            ct_domains = []
+            try:
+                ct_domains = query_ct_logs(asset.domain)
+            except Exception as e:
+                _logger.warning("ct_log_query_failed domain=%s: %s", asset.domain, e)
+
             all_candidates = list(set(variants + ct_domains))
             _logger.info("discovered %d candidate domains", len(all_candidates))
             _update_job(_job_id, domains_discovered=len(all_candidates))
 
             findings_created = 0
+            analysed = 0
+            consecutive_errors = 0
             for i, domain_candidate in enumerate(all_candidates):
                 try:
                     finding = analyse_domain(db=scan_db, domain=domain_candidate, asset=asset, job_id=_job_id)
                     if finding:
                         findings_created += 1
-                    if (i + 1) % 50 == 0:
-                        _logger.info("progress: %d/%d domains analysed, %d findings", i + 1, len(all_candidates), findings_created)
+                    analysed += 1
+                    consecutive_errors = 0
                 except Exception as e:
+                    consecutive_errors += 1
                     _logger.debug("domain_analysis_failed domain=%s: %s", domain_candidate, e)
+                    try:
+                        scan_db.rollback()
+                    except Exception:
+                        pass
+                    if consecutive_errors >= 20:
+                        _logger.error("too_many_consecutive_errors job=%s, stopping", _job_id)
+                        break
                     continue
+
+                if (i + 1) % 25 == 0:
+                    _update_job(_job_id, domains_analysed=analysed, findings_created=findings_created)
+                    _logger.info("progress: %d/%d domains analysed, %d findings", i + 1, len(all_candidates), findings_created)
 
             asset.last_scanned_at = datetime.now(timezone.utc)
             scan_db.commit()
@@ -86,12 +105,16 @@ async def trigger_scan(body: ScanJobTrigger, db: DB, current_user: AnalystOrAdmi
                 _job_id,
                 status=ScanJobStatus.completed,
                 completed_at=datetime.now(timezone.utc),
-                domains_analysed=len(all_candidates),
+                domains_analysed=analysed,
                 findings_created=findings_created,
             )
-            _logger.info("scan_completed job=%s findings=%d", _job_id, findings_created)
+            _logger.info("scan_completed job=%s analysed=%d findings=%d", _job_id, analysed, findings_created)
         except Exception as exc:
             _logger.error("scan_failed job=%s: %s", _job_id, exc)
+            try:
+                scan_db.rollback()
+            except Exception:
+                pass
             _update_job(
                 _job_id,
                 status=ScanJobStatus.failed,
