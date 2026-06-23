@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🛡️ DIMP — Domain Impersonation Monitoring Platform</h1>
+  <h1>🛡️ DIMP Domain Impersonation Monitoring Platform</h1>
   <p><strong>Continuous detection of typosquatting, homoglyph domains, cloned webpages, and phishing infrastructure targeting your brand.</strong></p>
   <br/>
   <img src="https://img.shields.io/badge/Python-3.12+-blue?logo=python" />
