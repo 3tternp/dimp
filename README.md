@@ -499,7 +499,7 @@ See [SECURITY.md](SECURITY.md). Please do not open public issues for vulnerabili
 
 ## 📜 License
 
-MIT — see [LICENSE](LICENSE).
+MIT see [LICENSE](LICENSE).
 
 ---
 
