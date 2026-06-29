@@ -43,20 +43,17 @@ DIMP monitors the internet for domains that may impersonate your organisation an
 ### 🚨 Findings
 ![Findings](docs/screenshots/dimp-findings.png)
 
-### 🔎 Finding Detail — esample.com (Typosquatting, Medium)
+### 🔎 Finding Detail esample.com (Typosquatting, Medium)
 ![Finding Detail](docs/screenshots/dimp-finding-detail.png)
 
-### 🔎 Finding Detail — example.co.uk (TLD Variation, Low)
+### 🔎 Finding Detail example.co.uk (TLD Variation, Low)
 ![Finding Detail - example.co.uk](docs/screenshots/dimp-finding-couk.png)
 
-### 🌐 Finding Detail — WHOIS, SSL & DNS
+### 🌐 Finding Detail WHOIS, SSL & DNS
 ![Finding WHOIS](docs/screenshots/dimp-finding-whois.png)
 
 ### 🛡️ Monitored Assets
 ![Assets](docs/screenshots/dimp-assets.png)
-
-### 📡 Scan History
-![Scans](docs/screenshots/dimp-scans.png)
 
 ### 📄 Reports
 ![Reports](docs/screenshots/dimp-reports.png)
@@ -229,15 +226,15 @@ curl -s -X POST http://localhost:8000/api/v1/auth/register \
 
 When a scan is triggered (manually or via schedule), the pipeline:
 
-1. **Discovery** — generates typosquat variants (character substitution, deletion, transposition, homoglyphs, TLD variations, extra words) and queries crt.sh certificate transparency logs
-2. **DNS resolution** — queries A, AAAA, MX, NS, TXT, CNAME records; non-resolving domains are scored minimally and skipped
-3. **WHOIS lookup** — registrar, creation/expiry dates, registrant info, privacy detection
-4. **SSL collection** — certificate issuer, SANs, validity, self-signed/expired detection
-5. **HTTP metadata** — page title, meta description, redirect chains, login form detection, credential field detection, external form actions, brand keyword matching
-6. **Threat intelligence** — checks domain against OpenPhish, PhishTank, ThreatFox, URLhaus, urlscan.io, and VirusTotal feeds
-7. **Similarity computation** — pHash visual similarity, TF-IDF content similarity, DOM structure comparison, favicon hash matching
-8. **Risk scoring** — 16-factor weighted scoring engine produces a 0-100 risk score
-9. **Finding creation** — domains exceeding the asset's risk threshold generate findings with severity classification and recommended actions
+1. **Discovery**  generates typosquat variants (character substitution, deletion, transposition, homoglyphs, TLD variations, extra words) and queries crt.sh certificate transparency logs
+2. **DNS resolution**  queries A, AAAA, MX, NS, TXT, CNAME records; non-resolving domains are scored minimally and skipped
+3. **WHOIS lookup** registrar, creation/expiry dates, registrant info, privacy detection
+4. **SSL collection** certificate issuer, SANs, validity, self-signed/expired detection
+5. **HTTP metadata** page title, meta description, redirect chains, login form detection, credential field detection, external form actions, brand keyword matching
+6. **Threat intelligence** checks domain against OpenPhish, PhishTank, ThreatFox, URLhaus, urlscan.io, and VirusTotal feeds
+7. **Similarity computation** pHash visual similarity, TF-IDF content similarity, DOM structure comparison, favicon hash matching
+8. **Risk scoring**  16-factor weighted scoring engine produces a 0-100 risk score
+9. **Finding creation** domains exceeding the asset's risk threshold generate findings with severity classification and recommended actions
 
 ### 🐳 Docker Compose services
 
