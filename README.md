@@ -67,8 +67,6 @@ DIMP monitors the internet for domains that may impersonate your organisation an
 ### ℹ️ Platform Info
 ![Platform Info](docs/screenshots/dimp-platform.png)
 
-### 📘 API Docs (Swagger)
-![Swagger](docs/screenshots/dimp-swagger.png)
 
 ---
 
